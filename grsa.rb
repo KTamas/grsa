@@ -52,7 +52,7 @@ class ReaderStats
     puts "done writing stats to #{file}"
   end
 
-  def fetch(file)
+  def fetch_and_dump(file)
     @the_cnt = 0
     @raw_url_dump_links = File.new(file, 'w')
     user="11540475980865935293"
@@ -72,12 +72,30 @@ class ReaderStats
     puts "done!"
     @raw_url_dump_links.close()
   end
+  
+
+  def fetch_reader_xml
+    user="11540475980865935293"
+    count=500
+    iter=0
+    atom_url="http://www.google.com/reader/public/atom/user/#{user}/state/com.google/broadcast?n=#{count}"
+    doc = Nokogiri(open(atom_url))
+    author = doc.search('author name').first.text
+    cont = doc.search('continuation')
+    doc.write_xml_to(File.new("#{author}_dump_#{iter}.xml", 'w'))
+    while cont.length > 0
+      iter += 1
+      puts "Starting the next #{iter * count}"
+      next_url = "#{atom_url}&c=#{cont.first.text}"
+      doc = Nokogiri(open(next_url))
+      cont = doc.search('continuation')
+      doc.write_xml_to(File.new("#{author}_dump_#{iter}.xml", 'w'))
+    end
+    puts "done!"
+  end
 
   def initialize
-    file = '/Users/ktamas/Prog/grsa/raw.txt'
-    fetch(file)
-    stats(file)
-    write_stats('/Users/ktamas/Prog/grsa/stats.txt')
+    fetch_reader_xml
   end
 
 end
